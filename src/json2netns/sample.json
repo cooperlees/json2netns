@@ -1,0 +1,35 @@
+{
+    "namespaces": {
+        "left": {
+            "id": 1,
+            "interfaces": {
+                "left0": {
+                    "prefixes": ["fd00::/64"],
+                    "other_end": "right0"
+                },
+                "lo": {
+                    "prefixes": ["fd00:1::/64", "10.6.9.1/32"]
+                }
+            },
+            "oob": true,
+            "routes": {}
+        },
+        "right": {
+            "id": 2,
+            "interfaces": {
+                "lo": {
+                    "prefixes": ["fd00:2::/64", "10.6.9.2/32"]
+                },
+                "right0": {
+                    "prefixes": ["fd00::/64"],
+                    "other_end": "left0"
+                }
+            },
+            "oob": true,
+            "routes": {}
+        }
+    },
+    "oob": {
+        "prefixes": ["fddd::/64"]
+    }
+}

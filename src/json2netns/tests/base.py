@@ -1,9 +1,9 @@
-#!/usr/bin/env python3.7
+#!/usr/bin/env python3
 
 import unittest
 
 
-# from json2netns.tests.x_tests import XTests  # noqa: F401
+from json2netns.tests.netns import NetNSTests  # noqa: F401
 
 
 import json2netns.main

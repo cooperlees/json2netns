@@ -11,7 +11,10 @@ ptr_params = {
     "entry_point_module": "src/json2netns/main",
     "test_suite": "json2netns.tests.base",
     "test_suite_timeout": 120,
-    "required_coverage": {"json2netns/main.py": 100},
+    "required_coverage": {
+        "json2netns/main.py": 100,
+        "json2netns/netns.py": 50,
+    },
     "run_black": True,
     "run_mypy": True,
     "run_flake8": True,
@@ -42,7 +45,7 @@ setup(
     packages=["json2netns", "json2netns.tests"],
     package_dir={"": "src"},
     package_data={
-        "json2netns": ["sample.conf"],
+        "json2netns": ["sample.json"],
     },
     python_requires=">=3.8.0",
     install_requires=[],
