@@ -12,6 +12,11 @@ LOG = logging.getLogger(__name__)
 
 class Namespace:
     IP = "/usr/sbin/ip"
+    check_commands = {
+        "## Addresses": (IP, "addr", "show"),
+        "## Routes (v4)": (IP, "route", "show"),
+        "## Routes (v6)": (IP, "-6", "route", "show"),
+    }
 
     def __init__(self, name: str, ns_config: Dict, config: Dict) -> None:
         self.name = name
@@ -79,12 +84,7 @@ class Namespace:
             LOG.info(f"Added {str(prefix)} to {interface} in {self.name} namespace")
 
     def check(self) -> None:
-        check_commands = {
-            "## Addresses": (self.IP, "addr", "show"),
-            "## Routes (v4)": (self.IP, "route", "show"),
-            "## Routes (v6)": (self.IP, "-6", "route", "show"),
-        }
-        for header, cmd in check_commands.items():
+        for header, cmd in self.check_commands.items():
             print(header)
             self.exec_in_ns(cmd, check=False)
 

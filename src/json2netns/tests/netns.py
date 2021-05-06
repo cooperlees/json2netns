@@ -21,9 +21,14 @@ class NetNSTests(unittest.TestCase):
             break
 
     def test_check(self) -> None:
-        with patch(f"{BASE_MODULE}.run") as mock_run:
+        with patch(f"{BASE_MODULE}.run") as mock_run, patch(
+            f"{BASE_MODULE}.print"
+        ) as mock_print:
             self.test_ns.check()
-            self.assertEqual(3, mock_run.call_count)
+            # Mocked objects should be both called for each check command
+            expected_calls = len(self.test_ns.check_commands)
+            self.assertEqual(expected_calls, mock_run.call_count)
+            self.assertEqual(expected_calls, mock_print.call_count)
 
     def test_create(self) -> None:
         with patch(f"{BASE_MODULE}.run") as mock_run:

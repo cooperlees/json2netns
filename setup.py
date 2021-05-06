@@ -13,7 +13,7 @@ ptr_params = {
     "test_suite_timeout": 120,
     "required_coverage": {
         "json2netns/main.py": 100,
-        "json2netns/netns.py": 65,
+        "json2netns/netns.py": 70,
     },
     "run_black": True,
     "run_mypy": True,
@@ -32,7 +32,7 @@ def get_long_description() -> str:
 
 setup(
     name="json2netns",
-    version="2021.5.5",
+    version="2021.5.6.dev0",
     description="JSON parsing Linux Network Namespace (netns) topology builder.",
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
