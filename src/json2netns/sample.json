@@ -4,11 +4,13 @@
             "id": 1,
             "interfaces": {
                 "left0": {
-                    "prefixes": ["fd00::/64"],
-                    "other_end": "right0"
+                    "prefixes": ["fd00::1/64"],
+                    "peer_name": "right0",
+                    "type": "veth"
                 },
                 "lo": {
-                    "prefixes": ["fd00:1::/64", "10.6.9.1/32"]
+                    "prefixes": ["fd00:1::/64", "10.6.9.1/32"],
+                    "type": "loopback"
                 }
             },
             "oob": true,
@@ -18,11 +20,13 @@
             "id": 2,
             "interfaces": {
                 "lo": {
-                    "prefixes": ["fd00:2::/64", "10.6.9.2/32"]
+                    "prefixes": ["fd00:2::/64", "10.6.9.2/32"],
+                    "type": "loopback"
                 },
                 "right0": {
-                    "prefixes": ["fd00::/64"],
-                    "other_end": "left0"
+                    "prefixes": ["fd00::2/64"],
+                    "peer_name": "right0",
+                    "type": "veth"
                 }
             },
             "oob": true,
@@ -30,6 +34,7 @@
         }
     },
     "oob": {
-        "prefixes": ["fddd::/64"]
-    }
+        "prefixes": ["fddd::/64", "10.255.255.0/24"]
+    },
+    "physical_int": "eth0"
 }
