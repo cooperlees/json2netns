@@ -4,19 +4,99 @@ import argparse
 import asyncio
 import logging
 import sys
-
+from concurrent.futures import ThreadPoolExecutor
+from getpass import getuser
+from pathlib import Path
+from typing import Awaitable, Dict, List
+from json2netns.netns import Namespace, load_config
 
 LOG = logging.getLogger(__name__)
+VALID_ACTIONS = {"create", "delete", "check"}
+VALID_SORTED_ACTIONS = sorted(VALID_ACTIONS)
+
+
+def amiroot() -> bool:
+    return getuser() == "root"
 
 
 async def async_main(args: argparse.Namespace) -> int:
+    config_path = Path(args.config)
+    topology_config = load_config(config_path)
+    executor = ThreadPoolExecutor(max_workers=args.workers)
+
+    namespaces: Dict[str, Namespace] = {}
+    for ns_name, ns_config in topology_config["namespaces"].items():
+        namespaces[ns_name] = Namespace(ns_name, ns_config, topology_config)
+
+    lower_action = args.action.lower()
+    if lower_action == "check":
+        ns_count = 0
+        for ns_name, ns in namespaces.items():
+            if ns_count != 0:
+                print("")
+            print(f"# Checking {ns_name}")
+            ns.check()
+            ns_count += 1
+
+        LOG.debug(f"Ran check commands for {ns_count} NSs")
+        return 0
+
+    if not amiroot():
+        LOG.error("Please sudo or become root to run netns resource changing commands")
+        return 69
+
+    loop = asyncio.get_running_loop()
+    namespace_coros: List[Awaitable] = []
+    for _ns_name, ns in namespaces.items():
+        if lower_action == "create":
+            namespace_coros.append(loop.run_in_executor(executor, ns.setup))
+        elif lower_action == "delete":
+            namespace_coros.append(loop.run_in_executor(executor, ns.cleanup))
+
+    if not namespace_coros:
+        LOG.error(f"Nothing to do. Is {lower_action} a valid action?")
+        return 10
+
+    await asyncio.gather(*namespace_coros)
+    return 0
+
+
+def validate_args(args: argparse.Namespace) -> int:
+    """Look at args and make sure that are valid"""
+    config_path = Path(args.config)
+    if not config_path.exists():
+        LOG.error("We need a JSON topology config to do anything")
+        return 1
+
+    if args.action.lower() not in VALID_ACTIONS:
+        LOG.error(
+            f"{args.action} is not valid! Valid choices: '{' '.join(VALID_SORTED_ACTIONS)}'"
+        )
+        return 2
     return 0
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument(
         "-d", "--debug", action="store_true", help="Verbose debug output"
+    )
+    parser.add_argument(
+        "--validate",
+        action="store_true",
+        help="Validate JSON config (not yet implemented)",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="Number of threads to for per netns operations",
+    )
+    parser.add_argument("config", help="Path to JSON topology config")
+    parser.add_argument(
+        "action", help=f"Action to perform: {'|'.join(VALID_SORTED_ACTIONS)}"
     )
     args = parser.parse_args()
 
@@ -26,7 +106,10 @@ def main() -> int:
         level=log_level,
     )
     LOG.debug(f"Starting {sys.argv[0]} ...")
-    return asyncio.run(async_main(args))
+    error_value = validate_args(args)
+    if error_value:
+        return error_value
+    return int(asyncio.run(async_main(args)))
 
 
 if __name__ == "__main__":  # pragma: nocover

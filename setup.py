@@ -12,7 +12,7 @@ ptr_params = {
     "test_suite": "json2netns.tests.base",
     "test_suite_timeout": 120,
     "required_coverage": {
-        "json2netns/main.py": 100,
+        "json2netns/main.py": 70,
         "json2netns/netns.py": 70,
     },
     "run_black": True,
