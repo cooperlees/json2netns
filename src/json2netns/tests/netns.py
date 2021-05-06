@@ -30,6 +30,16 @@ class NetNSTests(unittest.TestCase):
             self.test_ns.create()
             self.assertEqual(1, mock_run.call_count)
 
+    def test_create_devices_and_address(self) -> None:
+        with patch(f"{BASE_MODULE}.run") as mock_run, patch(
+            f"{BASE_MODULE}.Namespace.exec_in_ns"
+        ) as mock_exec_ns:
+            self.test_ns.create_devices_and_address()
+            # Only 1 non loopback interface - 2 calls to create int + move to ns
+            # 2 Calls for adding the v6 and v6 prefixes
+            self.assertEqual(2, mock_run.call_count)
+            self.assertEqual(2, mock_exec_ns.call_count)
+
     def test_delete(self) -> None:
         with patch(f"{BASE_MODULE}.LOG.info") as mock_log:
             self.test_ns.delete()

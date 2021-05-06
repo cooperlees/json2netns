@@ -4,7 +4,7 @@
             "id": 1,
             "interfaces": {
                 "left0": {
-                    "prefixes": ["fd00::1/64"],
+                    "prefixes": ["fd00::1/64", "10.1.1.1/24"],
                     "peer_name": "right0",
                     "type": "veth"
                 },
@@ -24,7 +24,7 @@
                     "type": "loopback"
                 },
                 "right0": {
-                    "prefixes": ["fd00::2/64"],
+                    "prefixes": ["fd00::2/64", "10.1.1.2/24"],
                     "peer_name": "right0",
                     "type": "veth"
                 }
