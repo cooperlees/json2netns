@@ -13,7 +13,7 @@ JSON parsing Linux Network Namespace (netns) topology builder.
 pip install git+git://github.com/cooperlees/json2netns
 ```
 
-# Concepts + Usage
+# Concepts
 
 The script takes a JSON config file and drives namespace creation from that JSON toplogy file.
 Lets look at the following simple two network namespace topology:
@@ -55,6 +55,20 @@ The above topology is represented by [sample.json](https://github.com/cooperlees
     "physical_int": ""
 }
 ```
+
+# Usage
+
+After installing just point it at a config file and run as root
+*(in the future we could make it capability aware too - PR Welcome!)*.
+
+- usage: json2netns [-h] [-d] [--validate] [--workers WORKERS] config action
+
+
+## Actions
+
+- **create**: Create the interfaces and namespaces + bring interfaces up
+- **check**: Print the interface addressing + v4/6 routing tables to stdout
+- **delete**: Remove the namespaces and all interfaces
 
 # Development
 
