@@ -9,8 +9,9 @@ from getpass import getuser
 from pathlib import Path
 from typing import Awaitable, Dict, List
 from json2netns.config import Config
-from json2netns.netns import Namespace, setup_all_veths
+from json2netns.netns import Namespace, MacVlan, setup_all_veths, setup_global_oob
 
+GLOBAL_OOB_INTERFACE = "oob0"
 LOG = logging.getLogger(__name__)
 VALID_ACTIONS = {"create", "delete", "check"}
 VALID_SORTED_ACTIONS = sorted(VALID_ACTIONS)
@@ -53,8 +54,12 @@ async def async_main(args: argparse.Namespace) -> int:
             # veth pairs need to be setup then moved to namespaces
             setup_all_veths(namespaces)
             namespace_coros.append(loop.run_in_executor(executor, ns.setup))
+            setup_global_oob(GLOBAL_OOB_INTERFACE, namespaces, topology_config)
         elif lower_action == "delete":
             namespace_coros.append(loop.run_in_executor(executor, ns.delete))
+            # Check if we have an oob device and clean it up
+            oob_int = MacVlan(GLOBAL_OOB_INTERFACE, "deleting_only")
+            oob_int.delete()
 
     if not namespace_coros:
         LOG.error(f"Nothing to do. Is {lower_action} a valid action?")

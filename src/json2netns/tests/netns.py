@@ -1,24 +1,43 @@
 #!/usr/bin/env python3
 
 import unittest
+from copy import deepcopy
 from ipaddress import IPv4Interface, IPv6Interface
 from pathlib import Path
 from unittest.mock import patch
 
 from json2netns.config import Config
-from json2netns.netns import Namespace, setup_all_veths
+from json2netns.netns import Interface, MacVlan, Namespace, Veth, setup_all_veths
 
 BASE_PATH = Path(__file__).parent.parent.resolve()
 BASE_MODULE = "json2netns.netns"
 SAMPLE_JSON_CONF_PATH = BASE_PATH / "sample.json"
 
 
+class InterfaceTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.interface = Interface()
+        self.mac_vlan = MacVlan("macvlan0", "eth0")
+        self.veth = Veth("veth0", "veth69")
+
+    def test_delete(self) -> None:
+        with patch(f"{BASE_MODULE}.run") as mock_run:
+            self.assertIsNone(self.interface.delete())
+            self.assertEqual(1, mock_run.call_count)
+
+
 class NetNSTests(unittest.TestCase):
     def setUp(self) -> None:
-        config = Config(SAMPLE_JSON_CONF_PATH).load()
-        for ns_name, ns_conf in config["namespaces"].items():
-            self.test_ns = Namespace(ns_name, ns_conf, config)
+        self.config = Config(SAMPLE_JSON_CONF_PATH).load()
+        for ns_name, ns_conf in self.config["namespaces"].items():
+            self.test_ns = Namespace(ns_name, ns_conf, self.config)
             break
+
+    def test_bad_id(self) -> None:
+        bad_config = deepcopy(self.config)
+        bad_config["namespaces"]["left"]["id"] = 0
+        with self.assertRaises(ValueError):
+            Namespace("bad_id", bad_config["namespaces"]["left"], bad_config)
 
     def test_check(self) -> None:
         with patch(f"{BASE_MODULE}.run") as mock_run, patch(

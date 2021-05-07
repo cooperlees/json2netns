@@ -1,7 +1,7 @@
 import logging
 from ipaddress import IPv4Interface, IPv6Interface, ip_interface, ip_network
 from pathlib import Path
-from subprocess import CompletedProcess, DEVNULL, run
+from subprocess import CompletedProcess, DEVNULL, PIPE, run
 from typing import Dict, List, Optional, Sequence, Union
 
 
@@ -22,6 +22,9 @@ class Namespace:
         self.name = name
         self.ns_path = Path(f"/run/netns/{self.name}")
         self.config = config
+        if ns_config["id"] < 1:
+            # The global oob and other resources will always be 0
+            raise ValueError("A namespace ID must be > 0")
         self.id = ns_config["id"]
         self.interfaces = ns_config["interfaces"]
         self.routes = ns_config["routes"]
@@ -50,6 +53,7 @@ class Namespace:
         LOG.info(f"Successfully {op}{d} {self.name} namespace")
         return cp
 
+    # TODO: Use Interface Objects here
     def _link_add(
         self,
         link_name: str,
@@ -217,23 +221,72 @@ class Namespace:
         self.route_add()
 
 
-class Veth:
-    """Veths pairs need to be made in default namespace then moved to NetNS"""
-
+class Interface:
     IP = DEFAULT_IP
+    name = "Interface"
+    type = "Interface"
+
+    def add_prefixes(self, prefixes: Sequence[IPInterface]) -> None:
+        for prefix in prefixes:
+            cmd = [self.IP, "addr", "add", str(prefix), "dev", self.name]
+            run(cmd, check=True, stdout=PIPE, stderr=PIPE)
+
+    def delete(self) -> Optional[CompletedProcess]:
+        if not self.exists():
+            LOG.debug(
+                f"Not deleting {self.name} {self.type} interface as it does not exist ..."
+            )
+            return None
+
+        cmd = [self.IP, "link", "del", self.name]
+        LOG.info(f"Deleting {self.type} interface {self.name}")
+        return run(cmd, check=True, stdout=PIPE, stderr=PIPE)
+
+    def exists(self) -> bool:
+        """Check if a interface device exists"""
+        cmd = [self.IP, "link", "show", "dev", self.name]
+        return run(cmd, stdout=DEVNULL, stderr=DEVNULL).returncode == 0
+
+
+class MacVlan(Interface):
+    """Class to create macvlan interfaces Prefix assignment + interface creation"""
+
+    def __init__(self, name: str, physical_int: str, *, mode: str = "bridge") -> None:
+        self.name = name
+        self.physical_interface = physical_int
+        self.type = "macvlan"
+        self.mode = mode
+
+    def create(self) -> CompletedProcess:
+        cmd = [
+            self.IP,
+            "link",
+            "add",
+            self.name,
+            "link",
+            self.physical_interface,
+            "type",
+            self.type,
+            "mode",
+            self.mode,
+        ]
+        LOG.info(
+            f"Created {self.type} {self.name} bridged to {self.physical_interface}"
+        )
+        return run(cmd, check=True)
+
+
+class Veth(Interface):
+    """Veths pairs need to be made in default namespace then moved to NetNS"""
 
     def __init__(self, name: str, peer: str) -> None:
         self.name = name
         self.peer = peer
+        self.type = "veth"
 
     def create(self) -> CompletedProcess:
-        cmd = [self.IP, "link", "add", self.name, "type", "veth", "peer", self.peer]
+        cmd = [self.IP, "link", "add", self.name, "type", self.type, "peer", self.peer]
         LOG.info(f"Created veth {self.name} with peer {self.peer}")
-        return run(cmd, check=True)
-
-    def delete(self) -> CompletedProcess:
-        cmd = [self.IP, "link", "del", self.name]
-        LOG.info(f"Deleted veth {self.name} with peer {self.peer}")
         return run(cmd, check=True)
 
 
@@ -259,3 +312,21 @@ def setup_all_veths(namespaces: Dict[str, Namespace]) -> None:
             veth = Veth(int_name, int_config["peer_name"])
             veth.create()
             LOG.info(f"Created {int_name} veth")
+
+
+def setup_global_oob(
+    interface_name: str, namespaces: Dict[str, Namespace], config: Dict
+) -> None:
+    """Add Global OOB interface if any netns has oob set to true"""
+    oob_wanted = False
+    for _, ns in namespaces.items():
+        if ns.oob:
+            oob_wanted = True
+    if not oob_wanted:
+        LOG.debug(
+            "Not setting up a global OOB device. No namespace has an oob interface"
+        )
+        return
+
+    oob_int = MacVlan(interface_name, config["physical_int"])
+    oob_int.create()

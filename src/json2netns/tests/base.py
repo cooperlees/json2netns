@@ -8,7 +8,7 @@ from pathlib import Path
 
 import json2netns.main
 from json2netns.config import Config
-from json2netns.tests.netns import NetNSTests  # noqa: F401
+from json2netns.tests.netns import InterfaceTests, NetNSTests  # noqa: F401
 
 
 BASE_PATH = Path(__file__).parent.parent.resolve()
