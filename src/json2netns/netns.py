@@ -2,16 +2,17 @@ import logging
 from ipaddress import IPv4Interface, IPv6Interface, ip_interface, ip_network
 from json import load
 from pathlib import Path
-from subprocess import CompletedProcess, run
+from subprocess import CompletedProcess, DEVNULL, run
 from typing import Dict, List, Optional, Sequence, Union
 
 
+DEFAULT_IP = "/usr/sbin/ip"
 IPInterface = Union[IPv4Interface, IPv6Interface]
 LOG = logging.getLogger(__name__)
 
 
 class Namespace:
-    IP = "/usr/sbin/ip"
+    IP = DEFAULT_IP
     check_commands = {
         "## Addresses": (IP, "addr", "show"),
         "## Routes (v4)": (IP, "route", "show"),
@@ -20,6 +21,7 @@ class Namespace:
 
     def __init__(self, name: str, ns_config: Dict, config: Dict) -> None:
         self.name = name
+        self.ns_path = Path(f"/run/netns/{self.name}")
         self.config = config
         self.id = ns_config["id"]
         self.interfaces = ns_config["interfaces"]
@@ -36,17 +38,17 @@ class Namespace:
         self, delete: bool, check: bool = True
     ) -> Optional[CompletedProcess]:
         """Create or delete the entire netns"""
-        ns_path = Path(f"/run/netns/{self.name}")
-        if not delete and ns_path.exists():
-            LOG.info(f"Namespace {self.name} already exists ...")
+        if not delete and self.ns_path.exists():
+            LOG.info(f"{self.name} namespace already exists ...")
             return None
-        elif delete and not ns_path.exists():
-            LOG.info(f"Namespace {self.name} does not exist ...")
+        elif delete and not self.ns_path.exists():
+            LOG.info(f"{self.name} namespace does not exist ...")
             return None
 
-        op = "del" if delete else "add"
+        op = "delete" if delete else "add"
+        d = "d" if delete else "ed"
         cp = run((f"{self.IP}", "netns", op, self.name), check=check)
-        LOG.info(f"Successfully '{op}'ed {self.name} namespace")
+        LOG.info(f"Successfully {op}{d} {self.name} namespace")
         return cp
 
     def _link_add(
@@ -61,16 +63,18 @@ class Namespace:
         if int_type == "macvlan":
             cmd.extend(["link", physical_int, "type", "macvlan", "mode", "bridge"])
         elif int_type == "veth":
-            cmd.extend(["type", "veth", "peer", "name", peer_name])
+            return self._link_set_ns(link_name)
         else:
             raise ValueError(f"{int_type} is not supported yet ... PR time?")
-        # Create link in global namespace
-        run(cmd, check=True)
 
+        run(cmd, check=True)
+        LOG.info(f"Successfully created {link_name}")
+        self._link_set_ns(link_name)
+
+    def _link_set_ns(self, link_name: str) -> None:
         link_set_cmd = [self.IP, "link", "set", link_name, "netns", self.name]
-        # Move link to namespace
         run(link_set_cmd, check=True)
-        LOG.info(f"Successfully created + added {link_name} to {self.name} namespace")
+        LOG.info(f"Moved {link_name} to {self.name} namespace")
 
     def _prefix_add(
         self,
@@ -100,7 +104,7 @@ class Namespace:
             if int_config["type"] == "loopback":
                 continue
 
-            if self.interface_exists(int_name).returncode == 0:
+            if self.interface_exists(int_name) == 0:
                 LOG.info("Skipping interface creation as {int_name} already exits")
                 continue
 
@@ -115,6 +119,7 @@ class Namespace:
                 physical_int=physical_int,
             )
             self._prefix_add(int_name, int_config["prefixes"])
+            self.up_interface(int_name)
 
     def create_oob(self) -> None:
         """If configured, add a OOB device to connect to global namespace + bridge with a physical interface"""
@@ -134,21 +139,27 @@ class Namespace:
         oob_prefixes = self.oob_addrs()
         self._prefix_add(oob_int_name, oob_prefixes)
 
-    def exec_in_ns(self, cmd: Sequence[str], check: bool = True) -> CompletedProcess:
+    def exec_in_ns(
+        self, cmd: Sequence[str], check: bool = True, output: bool = True
+    ) -> CompletedProcess:
         """Run command from inside the netns"""
+        output_fd = None if output else DEVNULL
         ns_cmd = [self.IP, "netns", "exec", self.name]
         ns_cmd.extend(cmd)
         LOG.debug(f"Running '{' '.join(ns_cmd)}' in {self.name} namespace")
-        cp = run(ns_cmd, check=check)
+        cp = run(ns_cmd, check=check, stdout=output_fd, stderr=output_fd)
         LOG.debug(
             f"Finished running '{' '.join(ns_cmd)}' {self.name} namespace (returned {cp.returncode})"
         )
         return cp
 
-    def interface_exists(self, interface: str) -> CompletedProcess:
+    def interface_exists(self, interface: str, outside_ns: bool = False) -> int:
         """Check if a device exists"""
         cmd = [self.IP, "link", "show", "dev", interface]
-        return self.exec_in_ns(cmd, check=False)
+        if outside_ns:
+            return run(cmd, stdout=DEVNULL, stderr=DEVNULL).returncode
+        else:
+            return self.exec_in_ns(cmd, check=False, output=False).returncode
 
     def oob_addrs(self) -> List[IPInterface]:
         if not self.oob:
@@ -173,21 +184,32 @@ class Namespace:
         """Add any needed static routes in netns"""
         pass
 
+    def up_interface(self, interface: str) -> None:
+        up_cmd = [self.IP, "link", "set", "up", "dev", interface]
+        self.exec_in_ns(up_cmd, output=False)
+        LOG.debug(f"Set '{interface}' interface up")
+
     def setup_loopback(self, loopback_int_name: str = "lo") -> None:
         """Set loopback up (always) + add prefixes if desired"""
-        up_cmd = [self.IP, "link", "set", "up", "dev", "lo"]
-        self.exec_in_ns(up_cmd)
-        LOG.debug("Set lo interface up")
-        if loopback_int_name not in self.interfaces:
+        self.up_interface(loopback_int_name)
+        if (
+            loopback_int_name not in self.interfaces
+            and "prefixes" not in self.interfaces[loopback_int_name]
+        ):
             return
-        for prefix in self.interfaces[loopback_int_name]["interfaces"]:
-            self._prefix_add(loopback_int_name, ip_interface(prefix))
+        prefixes = []
+        for prefix in self.interfaces[loopback_int_name]["prefixes"]:
+            prefixes.append(ip_interface(prefix))
+        if prefixes:
+            self._prefix_add(loopback_int_name, prefixes)
 
     def setup(self) -> None:
         """Cordination function to setup all the namespace elements
         - Designed to be idempotent - i.e. if it exists, move on"""
         # Create netns
         self.create()
+        # Always bring loopback up
+        self.setup_loopback()
         # Create links/interfaces + address them
         self.create_devices_and_address()
         # Create oob if selected
@@ -195,10 +217,25 @@ class Namespace:
         # Add any static routes
         self.route_add()
 
-    def cleanup(self) -> None:
-        """Cordination function to cleanup / remove all elements"""
-        # TODO: Remove if delete() is all we need
-        self.delete()
+
+class Veth:
+    """Veths pairs need to be made in default namespace then moved to NetNS"""
+
+    IP = DEFAULT_IP
+
+    def __init__(self, name: str, peer: str) -> None:
+        self.name = name
+        self.peer = peer
+
+    def create(self) -> CompletedProcess:
+        cmd = [self.IP, "link", "add", self.name, "type", "veth", "peer", self.peer]
+        LOG.info(f"Created veth {self.name} with peer {self.peer}")
+        return run(cmd, check=True)
+
+    def delete(self) -> CompletedProcess:
+        cmd = [self.IP, "link", "del", self.name]
+        LOG.info(f"Deleted veth {self.name} with peer {self.peer}")
+        return run(cmd, check=True)
 
 
 # TODO: Maybe make a configuration class to handle all this?
@@ -206,6 +243,30 @@ def load_config(conf_path: Path) -> Dict:
     """Load JSON config to use with creating Namespace objects"""
     with conf_path.open("rb") as cfp:
         return dict(load(cfp))
+
+
+def setup_all_veths(namespaces: Dict[str, Namespace]) -> None:
+    """Setup all veths in a namespace then move to netns where needed"""
+    for ns_name, ns in namespaces.items():
+        LOG.debug(f"Checking veths for {ns.name} namespace")
+        for int_name, int_config in ns.interfaces.items():
+            if int_config["type"] != "veth":
+                continue
+
+            if (
+                ns.interface_exists(
+                    int_name,
+                    outside_ns=True,
+                )
+                == 0
+                or (ns.ns_path.exists() and ns.interface_exists(int_name))
+            ):
+                LOG.debug(f"Not setting up {int_name} as it exists")
+                continue
+
+            veth = Veth(int_name, int_config["peer_name"])
+            veth.create()
+            LOG.info(f"Created {int_name} veth")
 
 
 # TODO: Validate config

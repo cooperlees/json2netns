@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from getpass import getuser
 from pathlib import Path
 from typing import Awaitable, Dict, List
-from json2netns.netns import Namespace, load_config
+from json2netns.netns import Namespace, load_config, setup_all_veths
 
 LOG = logging.getLogger(__name__)
 VALID_ACTIONS = {"create", "delete", "check"}
@@ -28,6 +28,10 @@ async def async_main(args: argparse.Namespace) -> int:
     for ns_name, ns_config in topology_config["namespaces"].items():
         namespaces[ns_name] = Namespace(ns_name, ns_config, topology_config)
 
+    if not amiroot():
+        LOG.error("Please `sudo` / become root to run netns commands")
+        return 69
+
     lower_action = args.action.lower()
     if lower_action == "check":
         ns_count = 0
@@ -41,23 +45,25 @@ async def async_main(args: argparse.Namespace) -> int:
         LOG.debug(f"Ran check commands for {ns_count} NSs")
         return 0
 
-    if not amiroot():
-        LOG.error("Please sudo or become root to run netns resource changing commands")
-        return 69
-
     loop = asyncio.get_running_loop()
     namespace_coros: List[Awaitable] = []
     for _ns_name, ns in namespaces.items():
         if lower_action == "create":
+            # veth pairs need to be setup then moved to namespaces
+            setup_all_veths(namespaces)
             namespace_coros.append(loop.run_in_executor(executor, ns.setup))
         elif lower_action == "delete":
-            namespace_coros.append(loop.run_in_executor(executor, ns.cleanup))
+            namespace_coros.append(loop.run_in_executor(executor, ns.delete))
 
     if not namespace_coros:
         LOG.error(f"Nothing to do. Is {lower_action} a valid action?")
         return 10
 
-    await asyncio.gather(*namespace_coros)
+    try:
+        await asyncio.gather(*namespace_coros)
+    except Exception as e:
+        LOG.error(f"{sys.argv[0]} Failed: {e}")
+        return -1
     return 0
 
 
@@ -70,7 +76,7 @@ def validate_args(args: argparse.Namespace) -> int:
 
     if args.action.lower() not in VALID_ACTIONS:
         LOG.error(
-            f"{args.action} is not valid! Valid choices: '{' '.join(VALID_SORTED_ACTIONS)}'"
+            f"{args.action} is not a valid action choice! Valid choices: '{' '.join(VALID_SORTED_ACTIONS)}'"
         )
         return 2
     return 0

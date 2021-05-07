@@ -24,10 +24,10 @@ class MainTests(unittest.TestCase):
         )
         with patch("json2netns.netns.Namespace.check") as mock_check, patch(
             "json2netns.main.print"
-        ) as mock_print:
+        ) as mock_print, patch("json2netns.main.amiroot", returm_value=True):
             self.assertEqual(0, asyncio.run(json2netns.main.async_main(ns)))
             self.assertEqual(2, mock_check.call_count)
-            self.assertEqual(2, mock_print.call_count)
+            self.assertEqual(3, mock_print.call_count)
 
     def test_main(self) -> None:
         ns = argparse.Namespace(

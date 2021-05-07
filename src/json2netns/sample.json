@@ -25,7 +25,7 @@
                 },
                 "right0": {
                     "prefixes": ["fd00::2/64", "10.1.1.2/24"],
-                    "peer_name": "right0",
+                    "peer_name": "left0",
                     "type": "veth"
                 }
             },
@@ -36,5 +36,5 @@
     "oob": {
         "prefixes": ["fddd::/64", "10.255.255.0/24"]
     },
-    "physical_int": "eth0"
+    "physical_int": "eno1"
 }

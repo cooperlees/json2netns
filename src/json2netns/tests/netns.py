@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-from json2netns.netns import Namespace, load_config
+from json2netns.netns import Namespace, load_config, setup_all_veths
 
 BASE_PATH = Path(__file__).parent.parent.resolve()
 BASE_MODULE = "json2netns.netns"
@@ -40,15 +40,22 @@ class NetNSTests(unittest.TestCase):
             f"{BASE_MODULE}.Namespace.exec_in_ns"
         ) as mock_exec_ns:
             self.test_ns.create_devices_and_address()
-            # Only 1 non loopback interface - 2 calls to create int + move to ns
-            self.assertEqual(2, mock_run.call_count)
-            # 3 Calls for adding the v6 and v6 prefixes + checking if it exists
-            self.assertEqual(3, mock_exec_ns.call_count)
+            # Only 1 non loopback veth interface - 1 call to just setns
+            self.assertEqual(1, mock_run.call_count)
+            # 4 Calls:
+            # - Check if exists
+            # - 2 for adding the v6 and v6 prefixes
+            # - Setting interface 'up'
+            self.assertEqual(4, mock_exec_ns.call_count)
 
     def test_delete(self) -> None:
-        with patch(f"{BASE_MODULE}.LOG.info") as mock_log:
+        with patch(f"{BASE_MODULE}.LOG.info") as mock_log, patch(
+            f"{BASE_MODULE}.run"
+        ) as mock_run:
             self.test_ns.delete()
             self.assertEqual(1, mock_log.call_count)
+            # We should not delete as it should not exist
+            self.assertEqual(0, mock_run.call_count)
 
     def test_valid_class(self) -> None:
         self.assertTrue("left", self.test_ns.name)
@@ -56,3 +63,11 @@ class NetNSTests(unittest.TestCase):
     def test_oob_addrs(self) -> None:
         expected = [IPv6Interface("fddd::1/64"), IPv4Interface("10.255.255.1/24")]
         self.assertEqual(expected, self.test_ns.oob_addrs())
+
+    def test_setup_all_veths(self) -> None:
+        # This test can not be ran in an env where a left0 interface can exist
+        ns_dict = {"left": self.test_ns}
+        with patch(f"{BASE_MODULE}.run") as mock_run:
+            setup_all_veths(ns_dict)
+            # Once run call for check interfaces exists and one for the veth add
+            self.assertEqual(2, mock_run.call_count)
