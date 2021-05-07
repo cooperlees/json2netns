@@ -8,7 +8,8 @@ from concurrent.futures import ThreadPoolExecutor
 from getpass import getuser
 from pathlib import Path
 from typing import Awaitable, Dict, List
-from json2netns.netns import Namespace, load_config, setup_all_veths
+from json2netns.config import Config
+from json2netns.netns import Namespace, setup_all_veths
 
 LOG = logging.getLogger(__name__)
 VALID_ACTIONS = {"create", "delete", "check"}
@@ -20,8 +21,8 @@ def amiroot() -> bool:
 
 
 async def async_main(args: argparse.Namespace) -> int:
-    config_path = Path(args.config)
-    topology_config = load_config(config_path)
+    config = Config(Path(args.config))
+    topology_config = config.load()
     executor = ThreadPoolExecutor(max_workers=args.workers)
 
     namespaces: Dict[str, Namespace] = {}

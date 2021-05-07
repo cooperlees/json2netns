@@ -1,6 +1,5 @@
 import logging
 from ipaddress import IPv4Interface, IPv6Interface, ip_interface, ip_network
-from json import load
 from pathlib import Path
 from subprocess import CompletedProcess, DEVNULL, run
 from typing import Dict, List, Optional, Sequence, Union
@@ -238,13 +237,6 @@ class Veth:
         return run(cmd, check=True)
 
 
-# TODO: Maybe make a configuration class to handle all this?
-def load_config(conf_path: Path) -> Dict:
-    """Load JSON config to use with creating Namespace objects"""
-    with conf_path.open("rb") as cfp:
-        return dict(load(cfp))
-
-
 def setup_all_veths(namespaces: Dict[str, Namespace]) -> None:
     """Setup all veths in a namespace then move to netns where needed"""
     for ns_name, ns in namespaces.items():
@@ -267,9 +259,3 @@ def setup_all_veths(namespaces: Dict[str, Namespace]) -> None:
             veth = Veth(int_name, int_config["peer_name"])
             veth.create()
             LOG.info(f"Created {int_name} veth")
-
-
-# TODO: Validate config
-def validate_config(config: Dict) -> None:
-    """High level config validator"""
-    pass

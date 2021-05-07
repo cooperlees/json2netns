@@ -7,6 +7,7 @@ from unittest.mock import patch
 from pathlib import Path
 
 import json2netns.main
+from json2netns.config import Config
 from json2netns.tests.netns import NetNSTests  # noqa: F401
 
 
@@ -51,6 +52,14 @@ class MainTests(unittest.TestCase):
         ns.action = "cooper_fuck_yes"
         ns.config = str(SAMPLE_CONF)
         self.assertEqual(2, json2netns.main.validate_args(ns))
+
+
+class ConfigTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.config = Config(SAMPLE_CONF)
+
+    def test_load_config(self) -> None:
+        self.assertTrue(isinstance(self.config.load(), dict))
 
 
 if __name__ == "__main__":

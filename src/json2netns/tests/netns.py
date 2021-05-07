@@ -5,8 +5,8 @@ from ipaddress import IPv4Interface, IPv6Interface
 from pathlib import Path
 from unittest.mock import patch
 
-
-from json2netns.netns import Namespace, load_config, setup_all_veths
+from json2netns.config import Config
+from json2netns.netns import Namespace, setup_all_veths
 
 BASE_PATH = Path(__file__).parent.parent.resolve()
 BASE_MODULE = "json2netns.netns"
@@ -15,7 +15,7 @@ SAMPLE_JSON_CONF_PATH = BASE_PATH / "sample.json"
 
 class NetNSTests(unittest.TestCase):
     def setUp(self) -> None:
-        config = load_config(SAMPLE_JSON_CONF_PATH)
+        config = Config(SAMPLE_JSON_CONF_PATH).load()
         for ns_name, ns_conf in config["namespaces"].items():
             self.test_ns = Namespace(ns_name, ns_conf, config)
             break
