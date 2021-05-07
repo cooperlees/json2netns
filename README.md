@@ -13,13 +13,48 @@ JSON parsing Linux Network Namespace (netns) topology builder.
 pip install git+git://github.com/cooperlees/json2netns
 ```
 
-# Usage
+# Concepts + Usage
 
-The script takes a JSON config gile and drives all from that.
+The script takes a JSON config file and drives namespace creation from that JSON toplogy file.
+Lets look at the following simple two network namespace topology:
+
+![json2netns sample topology](https://user-images.githubusercontent.com/3005596/117493918-79af0d00-af28-11eb-96df-ba2f43d889f2.png)
+
+We have two namespaces that have 1 direct connection via a veth. It also has a OOB (Out of Band)
+set of interfaces that allow the main Linux Network Namespace to communicate with the netns directly.
+
+- By default it even bridges with a physical interface to allow external packets to be routed into the netns if desired.
 
 ## Configuration
 
-It's JSON modeling the topology. TBA.
+The above topology is represented by [sample.json](https://github.com/cooperlees/json2netns/blob/main/src/json2netns/sample.json). This config is also used by unittests to ensure correct functioning. We can add to it over time as we add more features.
+
+### Small Black 1 NS Example JSON Config
+
+```json
+{
+    "namespaces": {
+        "left": {
+            "id": 1,
+            "interfaces": {
+                "left0": {
+                    "prefixes": ["fd00::1/64", "10.1.1.1/24"],
+                    "peer_name": "right0",
+                    "type": "veth"
+                },
+                "lo": {
+                    "prefixes": ["fd00:1::/64", "10.6.9.1/32"],
+                    "type": "loopback"
+                }
+            },
+            "oob": false,
+            "routes": {}
+        }
+    },
+    "oob": {},
+    "physical_int": ""
+}
+```
 
 # Development
 
