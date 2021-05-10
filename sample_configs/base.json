@@ -1,0 +1,24 @@
+{
+    "namespaces": {
+        "example_namespace": {
+            "id": -1,
+            "interfaces": {
+                "example0": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "lo": {
+                    "prefixes": [""],
+                    "type": "loopback"
+                }
+            },
+            "oob": true,
+            "routes": {}
+        }
+    },
+    "oob": {
+        "prefixes": ["fddd::/64", "10.255.0.0/16"]
+    },
+    "physical_int": "eno1"
+}
