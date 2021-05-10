@@ -1,0 +1,156 @@
+{
+    "namespaces": {
+        "top_left": {
+            "id": 1,
+            "interfaces": {
+                "top_left0": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "top_left1": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "lo": {
+                    "prefixes": [
+                        "10.6.9.0/32" 
+                    ],
+                    "type": "loopback"
+                }
+            },
+            "oob": true,
+            "routes": {}
+        },
+        "top_center": {
+            "id": 2,
+            "interfaces": {
+                "top_center0": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "top_center1": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "top_center2": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "lo": {
+                    "prefixes": [
+                        "10.6.9.0/32" 
+                    ],
+                    "type": "loopback"
+                }
+            },
+            "oob": true,
+            "routes": {}
+        },
+        "top_right": {
+            "id": 3,
+            "interfaces": {
+                "top_right0": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "top_right1": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "lo": {
+                    "prefixes": [
+                        "10.6.9.0/32"
+                    ],
+                    "type": "loopback"
+                }
+            },
+            "oob": true,
+            "routes": {}
+        },
+        "bottom_left": {
+            "id": 4,
+            "interfaces": {
+                "bottom_left0": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "bottom_left1": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "lo": {
+                    "prefixes": [
+                        "10.6.9.0/32" 
+                    ],
+                    "type": "loopback"
+                }
+            },
+            "oob": true,
+            "routes": {}
+        },
+        "bottom_center": {
+            "id": 5,
+            "interfaces": {
+                "bottom_center0": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "bottom_center1": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "bottom_center2": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "lo": {
+                    "prefixes": [
+                        "10.6.9.0/32" 
+                    ],
+                    "type": "loopback"
+                }
+            },
+            "oob": true,
+            "routes": {}
+        },
+        "bottom_right": {
+            "id": 6,
+            "interfaces": {
+                "bottom_right0": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "bottom_right1": {
+                    "prefixes": [""],
+                    "peer_name": "",
+                    "type": "veth"
+                },
+                "lo": {
+                    "prefixes": [
+                        "10.6.9.0/32"
+                    ],
+                    "type": "loopback"
+                }
+            },
+            "oob": true,
+            "routes": {}
+        }
+    },
+    "oob": {
+        "prefixes": ["fddd::/64", "10.255.0.0/16"]
+    },
+    "physical_int": "eno1"
+}

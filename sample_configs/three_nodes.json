@@ -1,0 +1,76 @@
+{
+    "namespaces": {
+        "left": {
+            "id": 1,
+            "interfaces": {
+                "left0": {
+                    "prefixes": ["fd00::1/64"],
+                    "peer_name": "area1",
+                    "type": "veth"
+                },
+                "lo": {
+                    "prefixes": [
+                        "10.6.9.0/32", 
+                        "10.6.9.1/32", 
+                        "fd00:2::/64",
+                        "fd00:3::/64"
+                    ],
+                    "type": "loopback"
+                }
+            },
+            "oob": true,
+            "routes": {}
+        },
+        "center": {
+            "id": 2,
+            "interfaces": {
+                "area1": {
+                    "prefixes": ["fd00::2/64"],
+                    "peer_name": "left0",
+                    "type": "veth"
+                },
+                "area2": {
+                    "prefixes": ["fd00:1::1/64"],
+                    "peer_name": "right0",
+                    "type": "veth"
+                },
+                "lo": {
+                    "prefixes": [
+                        "10.6.9.2/32", 
+                        "10.6.9.3/32", 
+                        "fd00:4::/64",
+                        "fd00:5::/64"
+                    ],
+                    "type": "loopback"
+                }
+            },
+            "oob": true,
+            "routes": {}
+        },
+        "right": {
+            "id": 3,
+            "interfaces": {
+                "right0": {
+                    "prefixes": ["fd00:1::2/64"],
+                    "peer_name": "area1",
+                    "type": "veth"
+                },
+                "lo": {
+                    "prefixes": [
+                        "10.6.9.4/32", 
+                        "10.6.9.5/32", 
+                        "fd00:6::/64",
+                        "fd00:7::/64"
+                    ],
+                    "type": "loopback"
+                }
+            },
+            "oob": true,
+            "routes": {}
+        }
+    },
+    "oob": {
+        "prefixes": ["fddd::/64", "10.255.0.0/16"]
+    },
+    "physical_int": "eno1"
+}
