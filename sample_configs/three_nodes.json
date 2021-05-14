@@ -72,5 +72,5 @@
     "oob": {
         "prefixes": ["fddd::/64", "10.255.0.0/16"]
     },
-    "physical_int": "eno1"
+    "physical_int": "enp2s0"
 }

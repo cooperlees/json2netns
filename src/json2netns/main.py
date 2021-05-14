@@ -47,19 +47,25 @@ async def async_main(args: argparse.Namespace) -> int:
         LOG.debug(f"Ran check commands for {ns_count} NSs")
         return 0
 
+    # Perform non co-ro fun
+    if lower_action == "create":
+        # veth pairs need to be setup then moved to namespaces
+        setup_all_veths(namespaces)
+        # Add global oob if wanted
+        setup_global_oob(GLOBAL_OOB_INTERFACE, namespaces, topology_config)
+    elif lower_action == "delete":
+        # Check if we have an oob device and clean it up
+        oob_int = MacVlan(GLOBAL_OOB_INTERFACE, "deleting_only")
+        oob_int.delete()
+
+    # Create NS Coros and run in parallel
     loop = asyncio.get_running_loop()
     namespace_coros: List[Awaitable] = []
     for _ns_name, ns in namespaces.items():
         if lower_action == "create":
-            # veth pairs need to be setup then moved to namespaces
-            setup_all_veths(namespaces)
             namespace_coros.append(loop.run_in_executor(executor, ns.setup))
-            setup_global_oob(GLOBAL_OOB_INTERFACE, namespaces, topology_config)
         elif lower_action == "delete":
             namespace_coros.append(loop.run_in_executor(executor, ns.delete))
-            # Check if we have an oob device and clean it up
-            oob_int = MacVlan(GLOBAL_OOB_INTERFACE, "deleting_only")
-            oob_int.delete()
 
     if not namespace_coros:
         LOG.error(f"Nothing to do. Is {lower_action} a valid action?")
@@ -82,7 +88,8 @@ def validate_args(args: argparse.Namespace) -> int:
 
     if args.action.lower() not in VALID_ACTIONS:
         LOG.error(
-            f"{args.action} is not a valid action choice! Valid choices: '{' '.join(VALID_SORTED_ACTIONS)}'"
+            f"{args.action} is not a valid action choice! Valid choices: "
+            + f"'{' '.join(VALID_SORTED_ACTIONS)}'"
         )
         return 2
     return 0

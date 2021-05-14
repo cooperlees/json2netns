@@ -125,7 +125,8 @@ class Namespace:
             self.up_interface(int_name)
 
     def create_oob(self) -> None:
-        """If configured, add a OOB device to connect to global namespace + bridge with a physical interface"""
+        """If configured, add a OOB device to connect to global namespace
+        + bridge with a physical interface"""
         if not self.oob:
             LOG.debug(f"No oob configred for {self.name}")
             return
@@ -152,7 +153,8 @@ class Namespace:
         LOG.debug(f"Running '{' '.join(ns_cmd)}' in {self.name} namespace")
         cp = run(ns_cmd, check=check, stdout=output_fd, stderr=output_fd)
         LOG.debug(
-            f"Finished running '{' '.join(ns_cmd)}' {self.name} namespace (returned {cp.returncode})"
+            f"Finished running '{' '.join(ns_cmd)}' {self.name} namespace "
+            + f"(returned {cp.returncode})"
         )
         return cp
 
@@ -292,7 +294,7 @@ class Veth(Interface):
 
 def setup_all_veths(namespaces: Dict[str, Namespace]) -> None:
     """Setup all veths in a namespace then move to netns where needed"""
-    for ns_name, ns in namespaces.items():
+    for _ns_name, ns in namespaces.items():
         LOG.debug(f"Checking veths for {ns.name} namespace")
         for int_name, int_config in ns.interfaces.items():
             if int_config["type"] != "veth":
