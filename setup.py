@@ -41,7 +41,9 @@ setup(
     author="Cooper Ry Lees",
     author_email="me@cooperlees.com",
     url="https://github.com/cooperlees/json2netns",
-    # project_urls={"Changelog": "https://github.com/cooperlees/json2netns/blob/master/CHANGES.md"},
+    # project_urls={
+    # "Changelog": "https://github.com/cooperlees/json2netns/blob/master/CHANGES.md"},
+    # },
     license="BSD",
     packages=["json2netns", "json2netns.tests"],
     package_dir={"": "src"},
