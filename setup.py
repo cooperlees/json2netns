@@ -23,17 +23,12 @@ ptr_params = {
 
 
 def get_long_description() -> str:
-    return (
-        (CURRENT_DIR / "README.md").read_text(encoding="utf8")
-        # TODO: Add changes
-        # + "\n\n"
-        # + (CURRENT_DIR / "CHANGES.md").read_text(encoding="utf8")
-    )
+    return (CURRENT_DIR / "README.md").read_text(encoding="utf8")
 
 
 setup(
     name="json2netns",
-    version="2021.5.7",
+    version="2021.5.17",
     description="JSON parsing Linux Network Namespace (netns) topology builder.",
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
@@ -41,9 +36,6 @@ setup(
     author="Cooper Ry Lees",
     author_email="me@cooperlees.com",
     url="https://github.com/cooperlees/json2netns",
-    # project_urls={
-    # "Changelog": "https://github.com/cooperlees/json2netns/blob/master/CHANGES.md"},
-    # },
     license="BSD",
     packages=["json2netns", "json2netns.tests"],
     package_dir={"": "src"},
