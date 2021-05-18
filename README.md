@@ -83,9 +83,10 @@ python3 -m venv [--upgrade-deps] /tmp/tj
 ## Run Tests
 
 ```console
-/tmp/tj/bin/ptr [-k] [--print-cov] [--debug]
+/tmp/tj/bin/ptr [-k] [--print-cov] [--debug] [--venv PATH]
 ```
 
 - `-k`: keep venv ptr creates
+  - `--venv` can then be used to reused the kept venv
 - `--print-cov`: handy to see what coverage is on all files
 - `--debug`: Handy to see all commands run so you can run a step manually
