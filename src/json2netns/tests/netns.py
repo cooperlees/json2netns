@@ -7,7 +7,14 @@ from pathlib import Path
 from unittest.mock import patch
 
 from json2netns.config import Config
-from json2netns.netns import Interface, MacVlan, Namespace, Veth, setup_all_veths
+from json2netns.netns import (
+    Interface,
+    MacVlan,
+    Namespace,
+    Veth,
+    setup_all_veths,
+    setup_global_oob,
+)
 
 BASE_PATH = Path(__file__).parent.parent.resolve()
 BASE_MODULE = "json2netns.netns"
@@ -90,3 +97,16 @@ class NetNSTests(unittest.TestCase):
             setup_all_veths(ns_dict)
             # Once run call for check interfaces exists and one for the veth add
             self.assertEqual(2, mock_run.call_count)
+
+    def test_setup_global_oob(self) -> None:
+        test_ns_dict = {"test_ns": deepcopy(self.test_ns)}
+        # Test when we want a global OOB interface
+        with patch(f"{BASE_MODULE}.run") as mock_run:
+            self.assertIsNone(setup_global_oob("unittest0", test_ns_dict, self.config))
+            self.assertEqual(4, mock_run.call_count)
+
+        # Test when we don't want a global OOB interface
+        test_ns_dict["test_ns"].oob = False
+        with patch(f"{BASE_MODULE}.LOG.debug") as mock_log_debug:
+            self.assertIsNone(setup_global_oob("unittest1", test_ns_dict, self.config))
+            self.assertEqual(1, mock_log_debug.call_count)
