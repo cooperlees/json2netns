@@ -92,7 +92,7 @@ class Namespace:
 
     def check(self) -> None:
         for header, cmd in self.check_commands.items():
-            print(header)
+            print(header, flush=True)
             self.exec_in_ns(cmd, check=False)
 
     def create(self, delete: bool = False) -> None:
