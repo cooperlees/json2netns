@@ -142,6 +142,7 @@ class Namespace:
         self._link_add(oob_int_name, "macvlan", physical_int=physical_int)
         oob_prefixes = self.oob_addrs()
         self._prefix_add(oob_int_name, oob_prefixes)
+        self.up_interface(oob_int_name)
 
     def exec_in_ns(
         self, cmd: Sequence[str], check: bool = True, output: bool = True
@@ -209,7 +210,7 @@ class Namespace:
             self._prefix_add(loopback_int_name, prefixes)
 
     def setup(self) -> None:
-        """Cordination function to setup all the namespace elements
+        """Coordination function to setup all the namespace elements
         - Designed to be idempotent - i.e. if it exists, move on"""
         # Create netns
         self.create()
@@ -247,6 +248,11 @@ class Interface:
     def exists(self) -> bool:
         """Check if a interface device exists"""
         cmd = [self.IP, "link", "show", "dev", self.name]
+        return run(cmd, stdout=DEVNULL, stderr=DEVNULL).returncode == 0
+
+    def set_link_up(self) -> bool:
+        """Check if a interface device exists"""
+        cmd = [self.IP, "link", "set", "up", "dev", self.name]
         return run(cmd, stdout=DEVNULL, stderr=DEVNULL).returncode == 0
 
 
@@ -324,6 +330,8 @@ def setup_global_oob(
     for _, ns in namespaces.items():
         if ns.oob:
             oob_wanted = True
+            break
+
     if not oob_wanted:
         LOG.debug(
             "Not setting up a global OOB device. No namespace has an oob interface"
@@ -332,3 +340,11 @@ def setup_global_oob(
 
     oob_int = MacVlan(interface_name, config["physical_int"])
     oob_int.create()
+    oob_int.set_link_up()
+
+    if "oob" not in config or "prefixes" not in config["oob"]:
+        LOG.error("No prefixes to add to global oob interface")
+        return None
+
+    oob_int.add_prefixes([ip_interface(ip) for ip in config["oob"]["prefixes"]])
+    LOG.info(f"Finished setting up {oob_int.name}")
