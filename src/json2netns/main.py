@@ -8,13 +8,13 @@ from concurrent.futures import ThreadPoolExecutor
 from getpass import getuser
 from pathlib import Path
 from typing import Awaitable, Dict, List
-from json2netns.config import Config
-from json2netns.netns import Namespace, MacVlan, setup_all_veths, setup_global_oob
 
-GLOBAL_OOB_INTERFACE = "oob0"
+from json2netns.config import Config
+from json2netns.consts import GLOBAL_OOB_INTERFACE, VALID_ACTIONS, VALID_SORTED_ACTIONS
+from json2netns.interfaces import MacVlan
+from json2netns.netns import Namespace, setup_all_veths, setup_global_oob
+
 LOG = logging.getLogger(__name__)
-VALID_ACTIONS = {"create", "delete", "check"}
-VALID_SORTED_ACTIONS = sorted(VALID_ACTIONS)
 
 
 def amiroot() -> bool:

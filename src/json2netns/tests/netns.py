@@ -7,30 +7,12 @@ from pathlib import Path
 from unittest.mock import patch
 
 from json2netns.config import Config
-from json2netns.netns import (
-    Interface,
-    MacVlan,
-    Namespace,
-    Veth,
-    setup_all_veths,
-    setup_global_oob,
-)
+from json2netns.netns import Namespace, setup_all_veths, setup_global_oob
 
 BASE_PATH = Path(__file__).parent.parent.resolve()
 BASE_MODULE = "json2netns.netns"
+BASE_INT_MODULE = "json2netns.interfaces"
 SAMPLE_JSON_CONF_PATH = BASE_PATH / "sample.json"
-
-
-class InterfaceTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.interface = Interface()
-        self.mac_vlan = MacVlan("macvlan0", "eth0")
-        self.veth = Veth("veth0", "veth69")
-
-    def test_delete(self) -> None:
-        with patch(f"{BASE_MODULE}.run") as mock_run:
-            self.assertIsNone(self.interface.delete())
-            self.assertEqual(1, mock_run.call_count)
 
 
 class NetNSTests(unittest.TestCase):
@@ -93,15 +75,18 @@ class NetNSTests(unittest.TestCase):
     def test_setup_all_veths(self) -> None:
         # This test can not be ran in an env where a left0 interface can exist
         ns_dict = {"left": self.test_ns}
-        with patch(f"{BASE_MODULE}.run") as mock_run:
+        with patch(f"{BASE_MODULE}.run") as mock_run, patch(
+            f"{BASE_INT_MODULE}.run"
+        ) as mock_int_run:
             setup_all_veths(ns_dict)
             # Once run call for check interfaces exists and one for the veth add
-            self.assertEqual(2, mock_run.call_count)
+            self.assertEqual(1, mock_run.call_count)
+            self.assertEqual(1, mock_int_run.call_count)
 
     def test_setup_global_oob(self) -> None:
         test_ns_dict = {"test_ns": deepcopy(self.test_ns)}
         # Test when we want a global OOB interface
-        with patch(f"{BASE_MODULE}.run") as mock_run:
+        with patch(f"{BASE_INT_MODULE}.run") as mock_run:
             self.assertIsNone(setup_global_oob("unittest0", test_ns_dict, self.config))
             self.assertEqual(4, mock_run.call_count)
 
