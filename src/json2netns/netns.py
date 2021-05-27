@@ -75,10 +75,10 @@ class Namespace:
             LOG.info(f"{self.name} namespace does not exist ...")
             return None
 
-        op = "delete" if delete else "add"
+        op = "Delete" if delete else "Add"
         d = "d" if delete else "ed"
-        cp = run((f"{self.IP}", "netns", op, self.name), check=check)
-        LOG.info(f"Successfully {op}{d} {self.name} namespace")
+        cp = run((f"{self.IP}", "netns", op.lower(), self.name), check=check)
+        LOG.info(f"{op}{d} {self.name} namespace")
         return cp
 
     def check(self) -> None:
@@ -173,6 +173,8 @@ class Namespace:
         # Add any static routes
         self.route_add()
 
+        LOG.info(f"Finished setup of {self.name} namespace")
+
 
 def setup_all_veths(namespaces: Dict[str, "Namespace"]) -> int:
     """Setup all veths in a namespace then move to netns where needed"""
@@ -180,11 +182,14 @@ def setup_all_veths(namespaces: Dict[str, "Namespace"]) -> int:
     for _ns_name, ns in namespaces.items():
         LOG.debug(f"Setting up veths for {ns.name} namespace")
         for int_name, int_obj in ns.interfaces.items():
-            if int_obj.create():
-                LOG.info(f"Created {int_name} veth")
-            else:
+            if int_obj.exists():
+                LOG.debug(f"{int_name} exists. Not creating")
+                continue
+
+            if not int_obj.create() and int_name != "lo":
                 LOG.error(f"FAILED to create {int_name}")
                 errors += 1
+
     return errors
 
 
@@ -212,5 +217,3 @@ def setup_global_oob(
     oob_int.create()
     oob_int.add_prefixes()
     oob_int.set_link_up()
-
-    LOG.info(f"Finished setting up {oob_int.name}")

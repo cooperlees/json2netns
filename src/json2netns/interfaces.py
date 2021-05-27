@@ -14,9 +14,9 @@ def _run(ip: str, *args: Any, **kwargs: Any) -> CompletedProcess:
     - We only support CMD Sequence as the only non kwarg"""
     if "netns_name" in kwargs:
         if kwargs["netns_name"]:
-            args = [ip, "netns", "exec", kwargs["netns_name"]] + args[0]
-            LOG.debug(f"Running in netns: {' '.join(args[0])}")
-        del [kwargs["netns_name"]]
+            args = ([ip, "netns", "exec", kwargs["netns_name"]] + args[0],)
+            LOG.debug(f"Running in {kwargs['netns_name']} netns: {' '.join(args[0])}")
+        del kwargs["netns_name"]
     else:
         LOG.debug(f"Running: {' '.join(args[0])}")
     return run(*args, **kwargs)
@@ -44,6 +44,10 @@ class Interface:
                 stderr=PIPE,
                 netns_name=netns_name,
             )
+            log_msg = f"Added {prefix} to {self.name}"
+            if netns_name:
+                log_msg += f" in {netns_name} namespace"
+            LOG.info(log_msg)
 
     def create(self) -> CompletedProcess:
         raise NotImplementedError("Each interface type needs to overload create")
@@ -89,6 +93,9 @@ class Interface:
 
 class Loopback(Interface):
     """Class to only support what we need for loopback interfaces"""
+
+    name = "lo"
+    type = "loopback"
 
     def __init__(self, prefixes: Sequence[str]) -> None:
         self.prefixes = self._convert_to_ip_interfaces(prefixes)

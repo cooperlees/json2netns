@@ -71,11 +71,7 @@ async def async_main(args: argparse.Namespace) -> int:
         LOG.error(f"Nothing to do. Is {lower_action} a valid action?")
         return 10
 
-    try:
-        await asyncio.gather(*namespace_coros)
-    except Exception as e:
-        LOG.error(f"{sys.argv[0]} Failed: {e}")
-        return -1
+    await asyncio.gather(*namespace_coros)
     return 0
 
 

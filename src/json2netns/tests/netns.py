@@ -49,8 +49,17 @@ class NetNSTests(unittest.TestCase):
             self.assertEqual(expected_calls, mock_print.call_count)
 
     def test_create(self) -> None:
-        with patch(f"{BASE_MODULE}.run") as mock_run:
+        with patch(f"{BASE_MODULE}.run") as mock_run, patch(
+            f"{BASE_MODULE}.Path.exists", lambda _: False
+        ):
             self.test_ns.create()
+            self.assertEqual(1, mock_run.call_count)
+
+    def test_delete(self) -> None:
+        with patch(f"{BASE_MODULE}.run") as mock_run, patch(
+            f"{BASE_MODULE}.Path.exists", lambda _: True
+        ):
+            self.test_ns.delete()
             self.assertEqual(1, mock_run.call_count)
 
     def test_setup_links(self) -> None:
@@ -66,15 +75,6 @@ class NetNSTests(unittest.TestCase):
             # - Move interface to netns
             self.assertEqual(11, mock_run.call_count)
 
-    def test_delete(self) -> None:
-        with patch(f"{BASE_MODULE}.LOG.info") as mock_log, patch(
-            f"{BASE_MODULE}.run"
-        ) as mock_run:
-            self.test_ns.delete()
-            self.assertEqual(1, mock_log.call_count)
-            # We should not delete as it should not exist
-            self.assertEqual(0, mock_run.call_count)
-
     def test_valid_class(self) -> None:
         self.assertTrue("left", self.test_ns.name)
 
@@ -87,8 +87,8 @@ class NetNSTests(unittest.TestCase):
         ns_dict = {"left": self.test_ns}
         with patch(f"{BASE_INT_MODULE}.run") as mock_int_run:
             setup_all_veths(ns_dict)
-            # Once run call for check interfaces exists and one for the veth add
-            self.assertEqual(1, mock_int_run.call_count)
+            # 2 exists calls and 1 create
+            self.assertEqual(3, mock_int_run.call_count)
 
     def test_setup_global_oob(self) -> None:
         test_ns_dict = {"test_ns": deepcopy(self.test_ns)}
