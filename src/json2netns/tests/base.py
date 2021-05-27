@@ -18,7 +18,9 @@ SAMPLE_CONF = BASE_PATH / "sample.json"
 
 class MainTests(unittest.TestCase):
     def test_amiroot(self) -> None:
-        self.assertFalse(json2netns.main.amiroot())
+        with patch("json2netns.main.getuser") as mock_user:
+            mock_user.return_value = "root"
+            self.assertTrue(json2netns.main.amiroot())
 
     def test_async_main_check(self) -> None:
         ns = argparse.Namespace(
