@@ -2,18 +2,21 @@
 
 JSON parsing Linux Network Namespace (netns) topology builder.
 
+# Install
+
+From PyPI:
+
+- `pip install json2netns`
+
+From GitHub:
+- `pip install git+git://github.com/cooperlees/json2netns`
+
+# Concepts
+
 - What is a Linux Namespace - aka NetNS?
   - https://blog.scottlowe.org/2013/09/04/introducing-linux-network-namespaces/
 - WHat is JSON?
   - https://www.json.org/
-
-# Install
-
-```console
-pip install git+git://github.com/cooperlees/json2netns
-```
-
-# Concepts
 
 The script takes a JSON config file and drives namespace creation from that JSON toplogy file.
 Lets look at the following simple two network namespace topology:
@@ -23,13 +26,13 @@ Lets look at the following simple two network namespace topology:
 We have two namespaces that have 1 direct connection via a veth. It also has a OOB (Out of Band)
 set of interfaces that allow the main Linux Network Namespace to communicate with the netns directly.
 
-- By default it even bridges with a physical interface to allow external packets to be routed into the netns if desired.
+- By default it even bridges with a physical interface to allow external packets to be routed into the netns if desired from a physical NIC.
 
 ## Configuration
 
 The above topology is represented by [sample.json](https://github.com/cooperlees/json2netns/blob/main/src/json2netns/sample.json). This config is also used by unittests to ensure correct functioning. We can add to it over time as we add more features.
 
-### Small Black 1 NS Example JSON Config
+### Small 1 NS Example JSON Config
 
 ```json
 {
@@ -58,7 +61,7 @@ The above topology is represented by [sample.json](https://github.com/cooperlees
 
 # Usage
 
-After installing just point it at a config file and run as root
+After installing just point `json2netns` at a config file and run as root
 *(in the future we could make it capability aware too - PR Welcome!)*.
 
 - usage: json2netns [-h] [-d] [--validate] [--workers WORKERS] config action
@@ -72,15 +75,20 @@ After installing just point it at a config file and run as root
 
 # Development
 
-## Install
+The code has been attmepted to be very object oriented. Please try to use inheritence
+and keep new interface types sub classes of Interface etc. for all code additons.
+
+## Development 'editable' Install
 
 ```console
 python3 -m venv [--upgrade-deps] /tmp/tj
-/tmp/tj/bin/pip install -r requirements_test.txt wheel
+/tmp/tj/bin/pip install -r requirements_test.txt
 /tmp/tj/bin/pip install -e .
 ````
 
 ## Run Tests
+
+For testing we use [ptr](https://github.com/facebookincubator/ptr/).
 
 ```console
 /tmp/tj/bin/ptr [-k] [--print-cov] [--debug]
