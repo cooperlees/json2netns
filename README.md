@@ -30,7 +30,7 @@ set of interfaces that allow the main Linux Network Namespace to communicate wit
 
 ## Configuration
 
-The above topology is represented by [sample.json](https://github.com/cooperlees/json2netns/blob/main/src/json2netns/sample.json). This config is also used by unittests to ensure correct functioning. We can add to it over time as we add more features.
+The above topology is represented by [sample.json](https://github.com/cooperlees/json2netns/blob/main/src/json2netns/sample.json). This config is also used by unittests to ensure correct functioning. We can add to it over time as users require more features.
 
 ### Small 1 NS Example JSON Config
 
@@ -61,8 +61,8 @@ The above topology is represented by [sample.json](https://github.com/cooperlees
 
 # Usage
 
-After installing just point `json2netns` at a config file and run as root
-*(in the future we could make it capability aware too - PR Welcome!)*.
+After installing just point `json2netns` at a valid config file and run as
+root *(in the future we could make it capability aware too - PR Welcome!)*.
 
 - usage: json2netns [-h] [-d] [--validate] [--workers WORKERS] config action
 
@@ -75,8 +75,8 @@ After installing just point `json2netns` at a config file and run as root
 
 # Development
 
-The code has been attmepted to be very object oriented. Please try to use inheritence
-and keep new interface types sub classes of Interface etc. for all code additons.
+The code has attempted to be object oriented first. Please try to use inheritance
+and keep new interface types sub classes of Interface etc. for all code additions.
 
 ## Development 'editable' Install
 
