@@ -55,7 +55,7 @@ async def async_main(args: argparse.Namespace) -> int:
         setup_global_oob(GLOBAL_OOB_INTERFACE, namespaces, topology_config)
     elif lower_action == "delete":
         # Check if we have an oob device and clean it up
-        oob_int = MacVlan(GLOBAL_OOB_INTERFACE, "deleting_only")
+        oob_int = MacVlan(GLOBAL_OOB_INTERFACE, "deleting_only", [])
         oob_int.delete()
 
     # Create NS Coros and run in parallel
@@ -71,11 +71,7 @@ async def async_main(args: argparse.Namespace) -> int:
         LOG.error(f"Nothing to do. Is {lower_action} a valid action?")
         return 10
 
-    try:
-        await asyncio.gather(*namespace_coros)
-    except Exception as e:
-        LOG.error(f"{sys.argv[0]} Failed: {e}")
-        return -1
+    await asyncio.gather(*namespace_coros)
     return 0
 
 
