@@ -1,6 +1,6 @@
-from setuptools import setup
-
 from pathlib import Path
+
+from setuptools import setup
 
 
 CURRENT_DIR = Path(__file__).parent
@@ -18,6 +18,7 @@ ptr_params = {
         "json2netns/main.py": 70,
         "json2netns/netns.py": 74,
     },
+    "run_usort": True,
     "run_black": True,
     "run_mypy": True,
     "run_flake8": True,

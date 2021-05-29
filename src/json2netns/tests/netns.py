@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import logging
-from subprocess import CompletedProcess
 import unittest
 from copy import deepcopy
 from ipaddress import IPv4Interface, IPv6Interface
 from pathlib import Path
+from subprocess import CompletedProcess
 from unittest.mock import patch
 
 from json2netns.config import Config

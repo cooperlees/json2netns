@@ -3,8 +3,8 @@
 import argparse
 import asyncio
 import unittest
-from unittest.mock import patch
 from pathlib import Path
+from unittest.mock import patch
 
 import json2netns.main
 from json2netns.config import Config
