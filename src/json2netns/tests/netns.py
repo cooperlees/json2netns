@@ -66,14 +66,16 @@ class NetNSTests(unittest.TestCase):
         with patch(f"{BASE_INT_MODULE}.run") as mock_run:
             # with patch(f"{BASE_INT_MODULE}.run", log_cmds_ran):
             self.test_ns.setup_links()
-            # 11 Calls to run():
+            # added two calls 11 -> 13 for prefixes added in
+            # commit 92f49a3a460ceb3daa7febc272f11b7c9a3ea0a3
+            # 13 Calls to run():
             # For each lo prefix + veth
             # - Check if exists
             # - Create (veth only - no create lo)
             # - 2 calls for adding the v6 and v6 prefixes
             # - Setting interface 'up'
             # - Move interface to netns
-            self.assertEqual(11, mock_run.call_count)
+            self.assertEqual(13, mock_run.call_count)
 
     def test_valid_class(self) -> None:
         self.assertTrue("left", self.test_ns.name)

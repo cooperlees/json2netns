@@ -149,12 +149,12 @@ class Namespace:
 
     # TODO: Add route support
     def route_add(self) -> None:
-        for _route_number, route in self.routes.items():
+        for route_obj, route in self.routes.items():
             # Initialize route obj
-            _route_number = Route(self.name, _route_number, route)
+            route_obj = Route(self.name, route_obj, route)
             # Send route to return formatted command list
-            cmd = (_route_number.get_route())
-            if cmd != None:
+            cmd = route_obj.get_route()
+            if cmd != []:
                 rc = self.exec_in_ns(cmd).returncode
                 if rc == 0:
                     LOG.info(
