@@ -1,7 +1,7 @@
-from ipaddress import ip_address, ip_network
-from typing import Dict, List
 import logging
+from ipaddress import ip_address, ip_network
 from subprocess import check_output, run, PIPE
+from typing import Dict, List
 
 from json2netns.consts import DEFAULT_IP
 
