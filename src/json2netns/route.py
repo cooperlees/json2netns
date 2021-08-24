@@ -1,6 +1,6 @@
 import logging
 from ipaddress import ip_address, ip_network
-from subprocess import check_output, run, PIPE
+from subprocess import check_output
 from typing import Dict, List
 
 from json2netns.consts import DEFAULT_IP
@@ -89,6 +89,7 @@ class Route:
             )
             return []
         # check that the destination and next hop are members of same protocol (v4/v6)
+        # Add support for IPv4 via IPv6 next hops (should probably open separate issue)
         if not self.__proto_match_validated(self.route):
             LOG.error(
                 f"Destination and next hop protocol mismatch, skipping installation of {self.route['dest_prefix']}"
@@ -96,7 +97,9 @@ class Route:
             return []
         # check to see if the destination prefix exists in the namespace route table
         if self.route_exists(self.route["dest_prefix"]):
-            LOG.error(f"Route already exists in table, skipping route")
+            LOG.error(
+                f"Route already exists in table, skipping installation of {self.route['dest_prefix']}"
+            )
             return []
         # We have checked the route doesn't exist, generate cmd list:
         # send route with next hop ip and next hop interface
