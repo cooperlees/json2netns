@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Sequence
 
 from json2netns.consts import DEFAULT_IP, IPInterface
 from json2netns.interfaces import Interface, Loopback, MacVlan, Veth
+from json2netns.route import Route
 
 
 LOG = logging.getLogger(__name__)
@@ -148,8 +149,22 @@ class Namespace:
 
     # TODO: Add route support
     def route_add(self) -> None:
-        """Add any needed static routes in netns"""
-        pass
+        for route_obj, route in self.routes.items():
+            # Initialize route obj
+            route_obj = Route(self.name, route_obj, route)
+            # Send route to return formatted command list
+            cmd = route_obj.get_route()
+            if cmd != []:
+                rc = self.exec_in_ns(cmd).returncode
+                if rc == 0:
+                    LOG.info(
+                        f"Installed route {route['dest_prefix']} into {self.name} namespace"
+                    )
+                else:
+                    # Debug if you see this; the route should be valid by this point
+                    LOG.error(
+                        f"Route {route['dest_prefix']} was not installed into {self.name} namespace, plese check logs"
+                    )
 
     def setup_links(self) -> None:
         """Create virtual network device and assign to the netns"""

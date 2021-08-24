@@ -16,7 +16,7 @@ ptr_params = {
         "json2netns/consts.py": 100,
         "json2netns/interfaces.py": 90,
         "json2netns/main.py": 70,
-        "json2netns/netns.py": 74,
+        "json2netns/netns.py": 71,
     },
     "run_usort": True,
     "run_black": True,
