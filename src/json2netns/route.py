@@ -12,10 +12,10 @@ LOG = logging.getLogger(__name__)
 class Route:
     IP = DEFAULT_IP
 
-    def __init__(self, netns_name: str, name: str, route: Dict) -> None:
+    def __init__(self, netns_name: str, name: str, attributes: Dict) -> None:
         self.name = name
         self.netns_name = netns_name
-        self.route = route
+        self.attributes = attributes
 
     def __proto_match_validated(self, route_test: Dict) -> bool:
         """Check to make sure the destination IP and next-hop match protocols (v4/v6)"""
@@ -31,7 +31,7 @@ class Route:
         """Check to make sure all elements exist that are needed for a valid route
         , then validate those elements"""
         if (route_test["dest_prefix"]) and (
-            route_test["next_hop_ip"] or route_test["exit_if_name"]
+            route_test["next_hop_ip"] or route_test["egress_if_name"]
         ):
             # Check for bad destination prefix, if so skip route installation
             try:
@@ -51,7 +51,7 @@ class Route:
                 return False
         return True
 
-    def route_exists(self, route_prefix: str) -> bool:
+    def route_exists(self, prefix: str) -> bool:
         """Checks if route exists already (maintain idempotency)"""
         route_4_cmd = [
             self.IP,
@@ -75,7 +75,7 @@ class Route:
 
         cp = (check_output(route_4_cmd)).decode("utf-8")
         cp = cp + (check_output(route_6_cmd)).decode("utf-8")
-        if cp.find(route_prefix) == -1:
+        if cp.find(prefix) == -1:
             return False
         else:
             return True
@@ -83,57 +83,57 @@ class Route:
     def get_route(self) -> List:
         """Generate cmd list for use with ns class"""
         # check that it's a valid destination address and next hop format
-        if not self.__route_validated(self.route):
+        if not self.__route_validated(self.attributes):
             LOG.error(
-                f"Route validation failed, skipping installation of {self.route['dest_prefix']}"
+                f"Route validation failed, skipping installation of {self.attributes['dest_prefix']}"
             )
             return []
         # check that the destination and next hop are members of same protocol (v4/v6)
         # Add support for IPv4 via IPv6 next hops (should probably open separate issue)
-        if not self.__proto_match_validated(self.route):
+        if not self.__proto_match_validated(self.attributes):
             LOG.error(
-                f"Destination and next hop protocol mismatch, skipping installation of {self.route['dest_prefix']}"
+                f"Destination and next hop protocol mismatch, skipping installation of {self.attributes['dest_prefix']}"
             )
             return []
         # check to see if the destination prefix exists in the namespace route table
-        if self.route_exists(self.route["dest_prefix"]):
+        if self.route_exists(self.attributes["dest_prefix"]):
             LOG.error(
-                f"Route already exists in table, skipping installation of {self.route['dest_prefix']}"
+                f"Route already exists in table, skipping installation of {self.attributes['dest_prefix']}"
             )
             return []
         # We have checked the route doesn't exist, generate cmd list:
         # send route with next hop ip and next hop interface
-        if ["next_hop_ip"] and self.route["exit_if_name"]:
+        if ["next_hop_ip"] and self.attributes["egress_if_name"]:
             cmd = [
                 self.IP,
                 "route",
                 "add",
-                self.route["dest_prefix"],
+                self.attributes["dest_prefix"],
                 "via",
-                self.route["next_hop_ip"],
+                self.attributes["next_hop_ip"],
                 "dev",
-                self.route["exit_if_name"],
+                self.attributes["egress_if_name"],
             ]
 
-        elif self.route["next_hop_ip"]:
+        elif self.attributes["next_hop_ip"]:
             # send route with next hop ip
             cmd = [
                 self.IP,
                 "route",
                 "add",
-                self.route["dest_prefix"],
+                self.attributes["dest_prefix"],
                 "via",
-                self.route["next_hop_ip"],
+                self.attributes["next_hop_ip"],
             ]
 
-        elif self.route["exit_if_name"]:
+        elif self.attributes["egress_if_name"]:
             # send route with next hop dev
             cmd = [
                 self.IP,
                 "route",
                 "add",
-                self.route["dest_prefix"],
+                self.attributes["dest_prefix"],
                 "dev",
-                self.route["exit_if_name"],
+                self.attributes["egress_if_name"],
             ]
         return cmd
