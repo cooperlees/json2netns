@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Sequence
 
 from json2netns.consts import DEFAULT_IP, IPInterface
 from json2netns.interfaces import Interface, Loopback, MacVlan, Veth
-from json2netns.route import Route
+from json2netns.route import Route, get_route
 
 
 LOG = logging.getLogger(__name__)
@@ -151,19 +151,25 @@ class Namespace:
     def route_add(self) -> None:
         for route_name, attributes in self.routes.items():
             # Initialize route obj
-            route_obj = Route(self.name, route_name, attributes)
+            route_obj = Route(
+                route_name,
+                self.name,
+                attributes["dest_prefix"],
+                attributes["next_hop_ip"],
+                attributes["egress_if_name"],
+            )
             # Send route to return formatted command list
-            cmd = route_obj.get_route()
+            cmd = get_route(route_obj)
             if cmd != []:
                 rc = self.exec_in_ns(cmd).returncode
                 if rc == 0:
                     LOG.info(
-                        f"Installed route {attributes['dest_prefix']} into {self.name} namespace"
+                        f"Installed route {route_obj.dest_prefix} into {route_obj.name} namespace"
                     )
                 else:
                     # Debug if you see this; the route should be valid by this point
                     LOG.error(
-                        f"Route {attributes['dest_prefix']} was not installed into {self.name} namespace, plese check logs"
+                        f"Route {route_obj.dest_prefix} was not installed into {route_obj.name} namespace, plese check logs"
                     )
 
     def setup_links(self) -> None:
