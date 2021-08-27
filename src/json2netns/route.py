@@ -12,9 +12,6 @@ LOG = logging.getLogger(__name__)
 IP = DEFAULT_IP
 
 
-# TODO: Swap the "route/attributes" dict for properties of the "Route" object or make a RouteAttributes named tuple OR dataclass
-#   Why? Stricter typing than a dict (Can name own types on these ex. IP_ADDRESS)
-#       From a JSON config we can use **kwargs to construct the objects nicely
 @dataclass
 class Route:
     name: str
