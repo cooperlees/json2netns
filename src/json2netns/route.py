@@ -71,7 +71,6 @@ class Route:
 
         cp = (check_output(route_4_cmd)).decode("utf-8")
         cp = cp + (check_output(route_6_cmd)).decode("utf-8")
-        print(cp)
 
         # Linux outputs host routes without /32 subnet mask
         # Search for /32 in route, if doesn't exist search in table, return result
@@ -97,7 +96,6 @@ class Route:
             return []
         # check that the destination and next hop are members of same protocol (v4/v6)
         # Add support for IPv4 via IPv6 next hops (should probably open separate issue)
-        print(self.__proto_match_validated())
         if not self.__proto_match_validated():
             LOG.error(
                 f"Destination and next hop protocol mismatch, skipping installation of {self.dest_prefix}"
