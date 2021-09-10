@@ -35,8 +35,6 @@ class RouteTests(unittest.TestCase):
         self.route_list = []
         for ns_name, ns_conf in self.config["namespaces"].items():
             for route_name, route in ns_conf["routes"].items():
-                # ### DEBUGGING: Delete before committing ###
-                print(route)
                 # Initialize route obj
                 route_obj = Route(
                     route_name,
