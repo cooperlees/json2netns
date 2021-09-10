@@ -62,6 +62,9 @@ class NetNSTests(unittest.TestCase):
             self.test_ns.delete()
             self.assertEqual(1, mock_run.call_count)
 
+    def test_route_add(self) -> None:
+        pass
+
     def test_setup_links(self) -> None:
         with patch(f"{BASE_INT_MODULE}.run") as mock_run:
             # with patch(f"{BASE_INT_MODULE}.run", log_cmds_ran):
