@@ -147,7 +147,6 @@ class Namespace:
 
         return interfaces
 
-    # TODO: Add route support
     def route_add(self) -> None:
         for route_name, attributes in self.routes.items():
             # Initialize route obj

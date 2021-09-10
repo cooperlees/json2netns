@@ -20,6 +20,7 @@ class Route:
     next_hop_ip: str
     egress_if_name: str
 
+    # TODO Add support for IPv4 via IPv6 next hops (should probably open separate issue)
     def __proto_match_validated(self) -> bool:
         """Check to make sure the destination IP and next-hop match protocols (v4/v6)"""
         if ip_network(self.dest_prefix).version == ip_address(self.next_hop_ip).version:

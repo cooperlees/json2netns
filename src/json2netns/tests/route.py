@@ -71,8 +71,6 @@ class RouteTests(unittest.TestCase):
             self.mismatch_route_obj._Route__proto_match_validated(),
             False,
         )
-        # with self.assertRaises(ValueError):
-        #     self.mismatch_route_obj._Route__proto_match_validated()
 
     def test_route_validated(self) -> None:
         # validate routes are valid
