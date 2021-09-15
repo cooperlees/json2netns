@@ -10,9 +10,11 @@ from unittest.mock import patch
 
 from json2netns.config import Config
 from json2netns.netns import Namespace, setup_all_veths, setup_global_oob
+from json2netns.route import Route
 
 BASE_PATH = Path(__file__).parent.parent.resolve()
 BASE_MODULE = "json2netns.netns"
+BASE_ROUTE_MODULE = "json2netns.route"
 BASE_INT_MODULE = "json2netns.interfaces"
 LOG = logging.getLogger(__name__)
 SAMPLE_JSON_CONF_PATH = BASE_PATH / "sample.json"
@@ -63,7 +65,13 @@ class NetNSTests(unittest.TestCase):
             self.assertEqual(1, mock_run.call_count)
 
     def test_route_add(self) -> None:
-        pass
+        with patch.object(Route, "get_route") as mock_get_route, patch.object(
+            Namespace, "exec_in_ns", return_value=CompletedProcess("", returncode=0)
+        ) as mock_exec_in_ns:
+            self.test_ns.route_add()
+            expected_calls = len(self.test_ns.routes)
+            self.assertEqual(expected_calls, mock_exec_in_ns.call_count)
+            self.assertEqual(expected_calls, mock_get_route.call_count)
 
     def test_setup_links(self) -> None:
         with patch(f"{BASE_INT_MODULE}.run") as mock_run:

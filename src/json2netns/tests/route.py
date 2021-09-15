@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 from subprocess import CompletedProcess
 from typing import List
+from unittest.mock import patch
 
 from json2netns.config import Config
 from json2netns.route import Route
@@ -27,7 +28,6 @@ def log_cmds_ran(*args, **kwargs) -> CompletedProcess:
 class RouteTests(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Config(SAMPLE_JSON_CONF_PATH).load()
-        print(self.config)
         # Initialize routes
         self.route_initialize()
 
@@ -43,7 +43,7 @@ class RouteTests(unittest.TestCase):
                     route["next_hop_ip"],
                     route["egress_if_name"],
                 )
-                # create a list of known good route objects to use
+                # create a list of known good route objects to use for testing
                 self.route_list.append(route_obj)
 
         # Create bad route objects for testing
@@ -61,24 +61,15 @@ class RouteTests(unittest.TestCase):
     def test_proto_match_validated(self) -> None:
         # validate protocols match
         for route in self.route_list:
-            self.assertIs(
-                route._Route__proto_match_validated(),
-                True,
-            )
+            self.assertTrue(route._Route__proto_match_validated())
 
         # validate protocols don't match
-        self.assertIs(
-            self.mismatch_route_obj._Route__proto_match_validated(),
-            False,
-        )
+        self.assertFalse(self.mismatch_route_obj._Route__proto_match_validated())
 
     def test_route_validated(self) -> None:
         # validate routes are valid
         for route in self.route_list:
-            self.assertIs(
-                route._Route__route_validated(),
-                True,
-            )
+            self.assertTrue(route._Route__route_validated())
 
         # validate bad destination is invalid
         with self.assertRaises(ValueError):
@@ -89,7 +80,34 @@ class RouteTests(unittest.TestCase):
             self.bad_nexthop_obj._Route__proto_match_validated()
 
     def test_route_exists(self) -> None:
-        pass
+        with patch(f"{BASE_MODULE}.check_output") as mock_check_output:
+            # Use first route in sample.json to test -> 10.6.9.6 via 10.1.1.2
+            # Route that isn't in table
+            mock_check_output.return_value = b"10.1.1.0/24 dev ens192"
+            self.assertFalse(self.route_list[0].route_exists())
+            # Host route that is in table
+            mock_check_output.return_value = b"10.6.9.6/32 via 10.1.1.2"
+            self.assertTrue(self.route_list[0].route_exists())
+
+            # Use second route in sample.json to test v6 non-host -> fd00:6::/64 via fd00::1
+            # v6 route that isn't in the table
+            mock_check_output.return_value = b"fd00::64/64 dev ens192"
+            self.assertFalse(self.route_list[1].route_exists())
+            # v6 route that is in table
+            mock_check_output.return_value = b"fd00:6::/64 dev ens192"
+            self.assertTrue(self.route_list[1].route_exists())
 
     def test_get_route(self) -> None:
-        pass
+        # Use first host route in sample.json to test -> 10.6.9.6 via 10.1.1.2
+        # Checks within this method are done above, thus mocked
+        with patch.object(
+            Route, "_Route__proto_match_validated", return_value=True
+        ), patch.object(
+            Route, "_Route__route_validated", return_value=True
+        ), patch.object(
+            Route, "route_exists", return_value=False
+        ):
+            self.assertEqual(
+                self.route_list[0].get_route(),
+                ["/usr/sbin/ip", "route", "add", "10.6.9.6/32", "via", "10.1.1.2"],
+            )
