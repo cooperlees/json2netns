@@ -147,23 +147,28 @@ class Namespace:
 
         return interfaces
 
-    # TODO: Add route support
     def route_add(self) -> None:
-        for route_obj, route in self.routes.items():
+        for route_name, attributes in self.routes.items():
             # Initialize route obj
-            route_obj = Route(self.name, route_obj, route)
+            route_obj = Route(
+                route_name,
+                self.name,
+                attributes["dest_prefix"],
+                attributes["next_hop_ip"],
+                attributes["egress_if_name"],
+            )
             # Send route to return formatted command list
             cmd = route_obj.get_route()
             if cmd != []:
                 rc = self.exec_in_ns(cmd).returncode
                 if rc == 0:
                     LOG.info(
-                        f"Installed route {route['dest_prefix']} into {self.name} namespace"
+                        f"Installed route {route_obj.dest_prefix} into {route_obj.netns_name} namespace"
                     )
                 else:
                     # Debug if you see this; the route should be valid by this point
                     LOG.error(
-                        f"Route {route['dest_prefix']} was not installed into {self.name} namespace, plese check logs"
+                        f"Route {route_obj.dest_prefix} was not installed into {route_obj.netns_name} namespace, plese check logs"
                     )
 
     def setup_links(self) -> None:

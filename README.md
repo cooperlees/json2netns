@@ -51,7 +51,18 @@ The above topology is represented by [sample.json](https://github.com/cooperlees
                 }
             },
             "oob": false,
-            "routes": {}
+            "routes": {
+                "route1": {
+                    "dest_prefix" : "10.6.9.6/32",
+                    "next_hop_ip" : "10.1.1.2",
+                    "egress_if_name" : ""
+                },
+                "route2": {
+                    "dest_prefix" : "fd00:6::/64",
+                    "next_hop_ip" : "fd00::2",
+                    "egress_if_name" : ""
+                }
+            }
         }
     },
     "oob": {},
