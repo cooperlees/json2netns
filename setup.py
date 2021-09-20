@@ -32,7 +32,7 @@ def get_long_description() -> str:
 
 setup(
     name="json2netns",
-    version="2021.5.27",
+    version="2021.9.20",
     description="JSON parsing Linux Network Namespace (netns) topology builder.",
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
